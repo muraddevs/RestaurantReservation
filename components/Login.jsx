@@ -1,44 +1,23 @@
 import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { Text, View, TouchableOpacity, StyleSheet, TextInput, Alert } from 'react-native';
+import { Text, View, TouchableOpacity, StyleSheet, TextInput, Alert, Image } from 'react-native';
 import axios from 'axios';
+import Google from "../icons/google.png";
+import Apple from "../icons/apple-logo.png";
+import Facebook from "../icons/facebook.png";
+import ShowIcon from "../icons/view.png";
+import HideIcon from "../icons/hide.png";
 
 export default function Login({ navigation }) {
-    const [username, setUsername] = useState('');  // State for username input
-    const [password, setPassword] = useState('');  // State for password input
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
 
-    const handleLogin = async () => {
-        try {
-            const response = await axios.post('https://dummyjson.com/auth/login', {
-                username: username,
-                password: password,
-            }, {
-                withCredentials: true,
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-
-            if (response.data.accessToken ) {
-                console.log('Login successful:', response.data);
-                Alert.alert('Login successful');
-                navigation.navigate('Home', { username });  // Pass username to Home
-            } else {
-                Alert.alert('Login failed');
-            }
-        } catch (error) {
-            console.error('Login error:', error);
-            Alert.alert('An error occurred', error.response ? error.response.data.message : 'Please try again.');
-        }
-    };
-
-    const handleLoginTest = () =>{
+    const handleLoginTest = () => {
         console.log('Login successful:');
         Alert.alert('Login successful');
-        navigation.navigate('Home', {username});
-    }
-
+        navigation.navigate('Home', { username });
+    };
 
     return (
         <View style={styles.container}>
@@ -69,9 +48,10 @@ export default function Login({ navigation }) {
                     onPress={() => setShowPassword(!showPassword)}
                     style={styles.toggleButton}
                 >
-                    <Text style={styles.toggleText}>
-                        {showPassword ? "Hide" : "Show"}
-                    </Text>
+                    <Image
+                        source={showPassword ? HideIcon : ShowIcon}
+                        style={styles.iconToggle}
+                    />
                 </TouchableOpacity>
             </View>
 
@@ -87,6 +67,19 @@ export default function Login({ navigation }) {
                 </Text>
             </TouchableOpacity>
 
+            {/* Social Login Icons */}
+            <View style={styles.iconContainer}>
+                <TouchableOpacity>
+                    <Image style={styles.iconStyle} source={Google} />
+                </TouchableOpacity>
+                <TouchableOpacity>
+                    <Image style={styles.iconStyle} source={Apple} />
+                </TouchableOpacity>
+                <TouchableOpacity>
+                    <Image style={styles.iconStyle} source={Facebook} />
+                </TouchableOpacity>
+            </View>
+
             <StatusBar style="auto" />
         </View>
     );
@@ -95,89 +88,94 @@ export default function Login({ navigation }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#f0f0f0',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 20,
+        paddingHorizontal: 30,
+        paddingVertical: 50,
+    },
+    welcomeText: {
+        fontSize: 26,
+        fontWeight: 'bold',
+        marginBottom: 40,
+        color: '#333',
     },
     inputText: {
         backgroundColor: '#fff',
         width: '100%',
-        maxWidth: 320,
         height: 50,
-        padding: 10,
-        marginTop: 20,
-        borderRadius: 8,
+        padding: 15,
+        marginBottom: 20,
+        borderRadius: 10,
         fontSize: 16,
         color: '#333',
         borderColor: '#ddd',
         borderWidth: 1,
-        elevation: 2,
+        elevation: 3,
     },
     passwordContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 20,
+        marginBottom: 20,
         width: '100%',
-        maxWidth: 320,
-        position: 'relative',
     },
     inputPassword: {
         flex: 1,
         backgroundColor: '#fff',
         height: 50,
-        padding: 10,
-        paddingRight: 60,
-        borderRadius: 8,
+        padding: 15,
+        borderRadius: 10,
         fontSize: 16,
         color: '#333',
         borderColor: '#ddd',
         borderWidth: 1,
-        elevation: 2,
+        elevation: 3,
     },
     toggleButton: {
         position: 'absolute',
-        right: 15,
+        right: 20,
         top: 15,
     },
-    toggleText: {
-        fontSize: 14,
-        color: '#1e90ff',
-        fontWeight: '600',
+    iconToggle: {
+        height: 20,
+        width: 20,
+        resizeMode: 'contain',
     },
     loginButton: {
         backgroundColor: '#1e90ff',
         paddingVertical: 14,
         paddingHorizontal: 40,
-        borderRadius: 8,
-        marginTop: 30,
+        borderRadius: 10,
+        marginTop: 10,
         width: '100%',
-        maxWidth: 320,
         alignItems: 'center',
         justifyContent: 'center',
-        elevation: 3,
+        elevation: 5,
     },
     buttonText: {
-        color: 'white',
+        color: '#fff',
         fontSize: 18,
         fontWeight: 'bold',
     },
     signupText: {
         fontSize: 14,
         color: '#888',
-        fontWeight: '400',
-        letterSpacing: 0.5,
         marginTop: 20,
         textAlign: 'center',
     },
     signupHighlight: {
         color: '#1e90ff',
         fontWeight: '700',
-        letterSpacing: 0.7,
     },
-    welcomeText: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 20,
+    iconContainer: {
+        flexDirection: 'row',
+        marginTop: 30,
+        justifyContent: 'space-around',
+        width: '60%',
+    },
+    iconStyle: {
+        height: 40,
+        width: 40,
+        resizeMode: 'contain',
     },
 });
