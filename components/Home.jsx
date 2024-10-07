@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
-import axios from 'axios';
 
 export default function Home({ route, navigation }) {
     const { username } = route.params || {};
@@ -13,7 +12,6 @@ export default function Home({ route, navigation }) {
             try {
                 const restaurantArray = [];
                 for (let i = 0; i < 5; i++) { // Fetch 5 dummy restaurants
-                    // Dummy data for restaurants
                     restaurantArray.push({
                         name: `Restaurant ${i + 1}`,
                         imageUrl: `https://dummyimage.com/300x200/000/fff.png&text=Restaurant+${i + 1}`,
@@ -74,10 +72,10 @@ export default function Home({ route, navigation }) {
                     renderItem={renderItem}
                     keyExtractor={(item, index) => index.toString()}
                     contentContainerStyle={styles.flatListContent}
-                    decelerationRate="fast" // Speeds up the scrolling so it feels snappy
-                    snapToAlignment="start" // Aligns the snap to the start of each item
+                    decelerationRate="fast"
+                    snapToAlignment="start"
                     pagingEnabled
-                    showsVerticalScrollIndicator={true}
+                    showsVerticalScrollIndicator={false}
                 />
             )}
         </View>
@@ -87,68 +85,78 @@ export default function Home({ route, navigation }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
-        padding: 10,
+        backgroundColor: '#fafafa',
+        padding: 15,
     },
     welcomeText: {
-        fontSize: 24,
+        fontSize: 24, // Reduced slightly for better balance
         fontWeight: 'bold',
-        marginBottom: 10,
-        textAlign: 'center',
-    },
-    usernameText: {
-        fontSize: 25,
         color: '#333',
+        textAlign: 'center',
         marginBottom: 20,
     },
+    usernameText: {
+        fontSize: 24, // Reduced to match the welcome text
+        color: '#FF6347',
+        fontWeight: '600',
+    },
     flatListContent: {
-        justifyContent: 'center',
+        paddingVertical: 20,
         alignItems: 'center',
     },
     restaurantWrapper: {
         justifyContent: 'center',
         alignItems: 'center',
-        borderRadius: 10,
+        borderRadius: 15,
         backgroundColor: '#fff',
-        padding: 15,
-        width: 330,
-        marginVertical: 10,
+        padding: 20,
+        width: 340,
+        marginBottom: 15,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-        elevation: 3,
+        shadowOffset: { width: 0, height: 5 },
+        shadowOpacity: 0.15,
+        shadowRadius: 10,
+        elevation: 5,
     },
     restaurantImage: {
         width: 300,
         height: 200,
-        borderRadius: 10,
+        borderRadius: 15,
     },
     restaurantName: {
-        marginTop: 10,
-        fontSize: 20,
+        marginTop: 15,
+        fontSize: 20, // Slightly smaller for better layout
         fontWeight: 'bold',
+        color: '#333',
         textAlign: 'center',
     },
     buttonGroup: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        justifyContent: 'space-between', // Space between buttons
         marginTop: 15,
     },
     orderButton: {
-        backgroundColor: '#4CAF50',
-        padding: 10,
-        borderRadius: 5,
-        marginHorizontal: 5,
+        backgroundColor: '#28a745',
+        paddingVertical: 10, // Reduced padding for a more compact look
+        paddingHorizontal: 15,
+        borderRadius: 8,
+        marginHorizontal: 10, // More space between buttons
+        maxWidth: 150, // Reduced width
+        maxHeight: 50, // Reduced height
     },
     reserveButton: {
-        backgroundColor: '#FF5733',
-        padding: 10,
-        borderRadius: 5,
-        marginHorizontal: 5,
+        backgroundColor: '#dc3545',
+        paddingVertical: 10, // Reduced padding for a more compact look
+        paddingHorizontal: 15,
+        borderRadius: 8,
+        marginHorizontal: 10, // More space between buttons
+        maxWidth: 150, // Reduced width
+        maxHeight: 50, // Reduced height
     },
     buttonText: {
         color: '#fff',
-        fontSize: 16,
+        fontSize: 14, // Reduced font size to fit within the buttons
+        fontWeight: '500',
+        textAlign: 'center',
     },
 });
