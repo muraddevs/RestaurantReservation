@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
 
-export default function Home({ route, navigation }) {
+export default function ReserveAndOrder({ route, navigation }) {
     const { username } = route.params || {};
     const [restaurants, setRestaurants] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -37,20 +37,12 @@ export default function Home({ route, navigation }) {
             />
             <Text style={styles.restaurantName}>{item.name}</Text>
 
-            <View style={styles.buttonGroup}>
-                <TouchableOpacity
-                    style={styles.orderButton}
-                    onPress={() => navigation.navigate('Menu', { restaurantName: item.name })}
-                >
-                    <Text style={styles.buttonText}>Order from Menu</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={styles.reserveButton}
-                    onPress={() => navigation.navigate('ReserveTable', { restaurantName: item.name })}
-                >
-                    <Text style={styles.buttonText}>Reserve a Table</Text>
-                </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+                style={styles.reserveAndOrderButton}
+                onPress={() => navigation.navigate('ReserveAndOrder', { restaurantName: item.name })}
+            >
+                <Text style={styles.buttonText}>Reserve & Order</Text>
+            </TouchableOpacity>
         </View>
     );
 
@@ -89,14 +81,14 @@ const styles = StyleSheet.create({
         padding: 15,
     },
     welcomeText: {
-        fontSize: 24, // Reduced slightly for better balance
+        fontSize: 24,
         fontWeight: 'bold',
         color: '#333',
         textAlign: 'center',
         marginBottom: 20,
     },
     usernameText: {
-        fontSize: 24, // Reduced to match the welcome text
+        fontSize: 24,
         color: '#FF6347',
         fontWeight: '600',
     },
@@ -125,37 +117,23 @@ const styles = StyleSheet.create({
     },
     restaurantName: {
         marginTop: 15,
-        fontSize: 20, // Slightly smaller for better layout
+        fontSize: 20,
         fontWeight: 'bold',
         color: '#333',
         textAlign: 'center',
     },
-    buttonGroup: {
-        flexDirection: 'row',
-        justifyContent: 'space-between', // Space between buttons
+    reserveAndOrderButton: {
+        backgroundColor: '#007bff',
+        paddingVertical: 10,
+        paddingHorizontal: 15,
+        borderRadius: 8,
         marginTop: 15,
-    },
-    orderButton: {
-        backgroundColor: '#28a745',
-        paddingVertical: 10, // Reduced padding for a more compact look
-        paddingHorizontal: 15,
-        borderRadius: 8,
-        marginHorizontal: 10, // More space between buttons
-        maxWidth: 150, // Reduced width
-        maxHeight: 50, // Reduced height
-    },
-    reserveButton: {
-        backgroundColor: '#dc3545',
-        paddingVertical: 10, // Reduced padding for a more compact look
-        paddingHorizontal: 15,
-        borderRadius: 8,
-        marginHorizontal: 10, // More space between buttons
-        maxWidth: 150, // Reduced width
-        maxHeight: 50, // Reduced height
+        maxWidth: 150,
+        maxHeight: 50,
     },
     buttonText: {
         color: '#fff',
-        fontSize: 14, // Reduced font size to fit within the buttons
+        fontSize: 14,
         fontWeight: '500',
         textAlign: 'center',
     },
