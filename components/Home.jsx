@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, ActivityIndicator, Button, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
 import axios from 'axios';
 
 export default function Home({ route, navigation }) {
@@ -30,45 +30,55 @@ export default function Home({ route, navigation }) {
         fetchRestaurants();
     }, []);
 
+    const renderItem = ({ item, index }) => (
+        <View key={index} style={styles.restaurantWrapper}>
+            <Image
+                source={{ uri: item.imageUrl }}
+                style={styles.restaurantImage}
+                resizeMode="cover"
+            />
+            <Text style={styles.restaurantName}>{item.name}</Text>
+
+            <View style={styles.buttonGroup}>
+                <TouchableOpacity
+                    style={styles.orderButton}
+                    onPress={() => navigation.navigate('Menu', { restaurantName: item.name })}
+                >
+                    <Text style={styles.buttonText}>Order from Menu</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={styles.reserveButton}
+                    onPress={() => navigation.navigate('ReserveTable', { restaurantName: item.name })}
+                >
+                    <Text style={styles.buttonText}>Reserve a Table</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
+    );
+
     return (
         <View style={styles.container}>
-            <Text style={styles.welcomeText}>Welcome {username ? (
+            <Text style={styles.welcomeText}>
+                Welcome {username ? (
                 <Text style={styles.usernameText}>{username}</Text>
             ) : (
                 <Text>No username provided</Text>
-            )}!</Text>
+            )}!
+            </Text>
 
             {loading ? (
                 <ActivityIndicator size="large" color="#0000ff" />
             ) : (
-                <ScrollView contentContainerStyle={styles.restaurantContainer}
-                            showsVerticalScrollIndicator={false}>
-                    {restaurants.map((restaurant, index) => (
-                        <View key={index} style={styles.restaurantWrapper}>
-                            <Image
-                                source={{ uri: restaurant.imageUrl }}
-                                style={styles.restaurantImage}
-                                resizeMode="cover"
-                            />
-                            <Text style={styles.restaurantName}>{restaurant.name}</Text>
-
-                            <View style={styles.buttonGroup}>
-                                <TouchableOpacity
-                                    style={styles.orderButton}
-                                    onPress={() => navigation.navigate('Menu', { restaurantName: restaurant.name })}
-                                >
-                                    <Text style={styles.buttonText}>Order from Menu</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={styles.reserveButton}
-                                    onPress={() => navigation.navigate('ReserveTable', { restaurantName: restaurant.name })}
-                                >
-                                    <Text style={styles.buttonText}>Reserve a Table</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    ))}
-                </ScrollView>
+                <FlatList
+                    data={restaurants}
+                    renderItem={renderItem}
+                    keyExtractor={(item, index) => index.toString()}
+                    contentContainerStyle={styles.flatListContent}
+                    decelerationRate="fast" // Speeds up the scrolling so it feels snappy
+                    snapToAlignment="start" // Aligns the snap to the start of each item
+                    pagingEnabled
+                    showsVerticalScrollIndicator={true}
+                />
             )}
         </View>
     );
@@ -77,8 +87,6 @@ export default function Home({ route, navigation }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
         backgroundColor: '#f5f5f5',
         padding: 10,
     },
@@ -86,22 +94,25 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 10,
+        textAlign: 'center',
     },
     usernameText: {
         fontSize: 25,
         color: '#333',
         marginBottom: 20,
     },
-    restaurantContainer: {
+    flatListContent: {
+        justifyContent: 'center',
         alignItems: 'center',
     },
     restaurantWrapper: {
-        marginVertical: 15,
+        justifyContent: 'center',
         alignItems: 'center',
         borderRadius: 10,
         backgroundColor: '#fff',
         padding: 15,
         width: 330,
+        marginVertical: 10,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
