@@ -60,13 +60,6 @@ export default function Login({ navigation }) {
                 <Text style={styles.buttonText}>Login</Text>
             </TouchableOpacity>
 
-            {/* Navigate to SignUp Page */}
-            <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-                <Text style={styles.signupText}>
-                    Don't have an account? <Text style={styles.signupHighlight}>Sign up!</Text>
-                </Text>
-            </TouchableOpacity>
-
             {/* Social Login Icons */}
             <View style={styles.iconContainer}>
                 <TouchableOpacity>
@@ -79,6 +72,13 @@ export default function Login({ navigation }) {
                     <Image style={styles.iconStyle} source={Facebook} />
                 </TouchableOpacity>
             </View>
+
+            {/* Navigate to SignUp Page */}
+            <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+                <Text style={styles.signupText}>
+                    Don't have an account? <Text style={styles.signupHighlight}>Sign up!</Text>
+                </Text>
+            </TouchableOpacity>
 
             <StatusBar style="auto" />
         </View>
@@ -169,7 +169,8 @@ const styles = StyleSheet.create({
     },
     iconContainer: {
         flexDirection: 'row',
-        marginTop: 30,
+        marginTop: 40,
+        marginBottom: 10,
         justifyContent: 'space-around',
         width: '60%',
     },

@@ -1,8 +1,13 @@
 // components/SignUp.js
 import { StatusBar } from 'expo-status-bar';
-import { Text, View, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
+import {Text, View, TouchableOpacity, StyleSheet, TextInput, Image} from 'react-native';
 import React, { useState } from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import Google from "../icons/google.png";
+import Apple from "../icons/apple-logo.png";
+import Facebook from "../icons/facebook.png";
+import ShowIcon from "../icons/view.png";
+import HideIcon from "../icons/hide.png";
 
 export default function SignUp({ navigation }) {  // Add navigation prop
     const [showPassword, setShowPassword] = useState(false);
@@ -70,9 +75,10 @@ export default function SignUp({ navigation }) {  // Add navigation prop
                     onPress={() => setShowPassword(!showPassword)}
                     style={styles.toggleButton}
                 >
-                    <Text style={styles.toggleText}>
-                        {showPassword ? "Hide" : "Show"}
-                    </Text>
+                    <Image
+                        source={showPassword ? HideIcon : ShowIcon}
+                        style={styles.iconToggle}
+                    />
                 </TouchableOpacity>
             </View>
 
@@ -88,9 +94,10 @@ export default function SignUp({ navigation }) {  // Add navigation prop
                     onPress={() => setShowRepeatPassword(!showRepeatPassword)}
                     style={styles.toggleButton}
                 >
-                    <Text style={styles.toggleText}>
-                        {showRepeatPassword ? "Hide" : "Show"}
-                    </Text>
+                    <Image
+                        source={showRepeatPassword ? HideIcon : ShowIcon}
+                        style={styles.iconToggle}
+                    />
                 </TouchableOpacity>
             </View>
 
@@ -98,6 +105,19 @@ export default function SignUp({ navigation }) {  // Add navigation prop
             <TouchableOpacity style={styles.signupButton} onPress={() => {}}>
                 <Text style={styles.buttonText}>Sign Up</Text>
             </TouchableOpacity>
+
+            {/* Social Login Buttons */}
+            <View style={styles.iconContainer}>
+                <TouchableOpacity>
+                    <Image style={styles.iconStyle} source={Google} />
+                </TouchableOpacity>
+                <TouchableOpacity>
+                    <Image style={styles.iconStyle} source={Apple} />
+                </TouchableOpacity>
+                <TouchableOpacity>
+                    <Image style={styles.iconStyle} source={Facebook} />
+                </TouchableOpacity>
+            </View>
 
             {/* Navigate to Login Page */}
             <TouchableOpacity onPress={() => navigation.navigate('Login')}>
@@ -143,7 +163,6 @@ const styles = StyleSheet.create({
         marginTop: 20,
         width: '100%',
         maxWidth: 320,
-        position: 'relative',
     },
     inputPassword: {
         flex: 1,
@@ -164,13 +183,10 @@ const styles = StyleSheet.create({
     },
     toggleButton: {
         position: 'absolute',
-        right: 15,
+        right: 10,
         top: 15,
-    },
-    toggleText: {
-        fontSize: 14,
-        color: '#1e90ff',
-        fontWeight: '600',
+        padding: 5,
+        marginTop: -4,
     },
     signupButton: {
         backgroundColor: '#1e90ff',
@@ -214,5 +230,22 @@ const styles = StyleSheet.create({
     dateText: {
         fontSize: 16,
         color: '#333',
+    },
+    iconContainer: {
+        flexDirection: 'row',
+        marginTop: 40,
+        justifyContent: 'space-around',
+        width: '60%',
+        marginBottom: 10,
+    },
+    iconStyle: {
+        height: 40,
+        width: 40,
+        resizeMode: 'contain',
+    },
+    iconToggle: {
+        height: 20,
+        width: 20,
+        resizeMode: 'contain',
     },
 });
