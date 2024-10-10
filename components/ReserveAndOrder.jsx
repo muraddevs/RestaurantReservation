@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, Modal, FlatList } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 export default function ReserveAndOrder({ route, navigation }) {
@@ -11,6 +11,10 @@ export default function ReserveAndOrder({ route, navigation }) {
     const [showTimePicker, setShowTimePicker] = useState(false);
     const [items, setItems] = useState([]);
     const [selectedItems, setSelectedItems] = useState({});
+    const [tableNumber, setTableNumber] = useState(null);
+    const [reserved, setReserved] = useState(false);
+    const [availableTables] = useState([...Array(20).keys()].map((i) => i + 1)); // Array of table numbers
+    const [isModalVisible, setModalVisible] = useState(false);
 
     const handleGuestsChange = (text) => {
         setGuests(text);
@@ -21,21 +25,24 @@ export default function ReserveAndOrder({ route, navigation }) {
             Alert.alert("Invalid Input", "Please enter a valid number of guests.");
             return;
         }
+        if (!tableNumber) {
+            Alert.alert("Invalid Input", "Please select a table number.");
+            return;
+        }
 
         Alert.alert(
             "Reservation Confirmed",
-            `Table for ${guests} at ${restaurantName} on ${date.toLocaleDateString()} at ${time.toLocaleTimeString()}.`
+            `Table ${tableNumber} for ${guests} guests at ${restaurantName} on ${date.toLocaleDateString()} at ${time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`
         );
 
-        // Reset the reservation fields and prepare for ordering
         setGuests('');
         setShowDatePicker(false);
         setShowTimePicker(false);
-        fetchMenu(); // Fetch menu after reservation
+        setReserved(true);
+        fetchMenu();
     };
 
     const fetchMenu = () => {
-        // Dummy menu items for the selected restaurant
         const dummyMenu = [
             { id: 1, name: 'Burger', price: 8.99 },
             { id: 2, name: 'Pizza', price: 12.99 },
@@ -43,124 +50,176 @@ export default function ReserveAndOrder({ route, navigation }) {
             { id: 4, name: 'Salad', price: 6.99 },
             { id: 5, name: 'Fries', price: 3.99 },
         ];
-        setItems(dummyMenu); // Set the menu items
+        setItems(dummyMenu);
     };
 
-
     const handleIncreaseQuantity = (item) => {
-        setSelectedItems((prevItems) => {
-            const newItems = { ...prevItems };
-            if (newItems[item.id]) {
-                newItems[item.id].quantity += 1; // Increment quantity
-            } else {
-                newItems[item.id] = { ...item, quantity: 1 }; // Initialize quantity if item doesn't exist
-            }
-            return newItems;
-        });
+        setSelectedItems((prev) => ({
+            ...prev,
+            [item.id]: {
+                ...prev[item.id],
+                quantity: (prev[item.id]?.quantity || 0) + 1,
+            },
+        }));
     };
 
     const handleDecreaseQuantity = (item) => {
-        setSelectedItems((prevItems) => {
-            const newItems = { ...prevItems };
-            if (newItems[item.id] && newItems[item.id].quantity > 1) {
-                newItems[item.id].quantity -= 1; // Decrement quantity if greater than 1
-            } else {
-                delete newItems[item.id]; // Remove item if quantity is 1
-            }
-            return newItems;
+        setSelectedItems((prev) => {
+            const newQuantity = (prev[item.id]?.quantity || 1) - 1;
+            return {
+                ...prev,
+                [item.id]: {
+                    ...prev[item.id],
+                    quantity: newQuantity > 0 ? newQuantity : 0,
+                },
+            };
         });
     };
 
-
     const calculateTotal = () => {
-        return Object.values(selectedItems).reduce((total, item) => total + item.price * item.quantity, 0).toFixed(2);
+        return items.reduce((total, item) => {
+            const quantity = selectedItems[item.id]?.quantity || 0;
+            return total + item.price * quantity;
+        }, 0).toFixed(2);
     };
 
     const handlePlaceOrder = () => {
-        if (Object.keys(selectedItems).length === 0) {
-            Alert.alert("No Items Selected", "Please select items to order.");
-            return;
-        }
-        Alert.alert('Order Confirmed', `Your order has been placed at ${restaurantName}! Total: $${calculateTotal()}`, [
-            { text: 'OK', onPress: () => navigation.navigate('Home') },
+        Alert.alert("Order Placed", `Your order for table ${tableNumber} has been placed.`, [
+            {
+                text: "OK",
+                onPress: () => {
+                    setSelectedItems({});
+                    navigation.navigate('Home'); // Replace 'Home' with the actual name of your home screen
+                },
+            },
         ]);
+    };
+
+
+    const handleCancelOrder = () => {
+        setSelectedItems({});
+        Alert.alert("Order Canceled", "Your order has been canceled.");
     };
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Reserve a Table at {restaurantName}</Text>
-            <TextInput
-                style={styles.input}
-                placeholder="Number of Guests"
-                keyboardType="numeric"
-                value={guests}
-                onChangeText={handleGuestsChange}
-            />
+            {!reserved ? (
+                <>
+                    <Text style={styles.title}>Reserve a Table at {restaurantName}</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Number of Guests"
+                        keyboardType="numeric"
+                        value={guests}
+                        onChangeText={handleGuestsChange}
+                    />
 
-            <TouchableOpacity style={styles.buttonStyle} onPress={() => setShowDatePicker(true)}>
-                <Text style={styles.buttonText}>Select Date</Text>
-            </TouchableOpacity>
+                    <TouchableOpacity style={styles.buttonStyle} onPress={() => setShowDatePicker(true)}>
+                        <Text style={styles.buttonText}>
+                            {date ? date.toLocaleDateString() : 'Select Date'}
+                        </Text>
+                    </TouchableOpacity>
 
-            {showDatePicker && (
-                <DateTimePicker
-                    value={date}
-                    mode="date"
-                    display="default"
-                    onChange={(event, selectedDate) => {
-                        setShowDatePicker(false);
-                        if (selectedDate) {
-                            setDate(selectedDate);
-                        }
-                    }}
-                />
-            )}
+                    {showDatePicker && (
+                        <DateTimePicker
+                            value={date}
+                            mode="date"
+                            display="default"
+                            onChange={(event, selectedDate) => {
+                                setShowDatePicker(false);
+                                if (selectedDate) {
+                                    setDate(selectedDate);
+                                }
+                            }}
+                        />
+                    )}
 
-            <TouchableOpacity style={styles.buttonStyle} onPress={() => setShowTimePicker(true)}>
-                <Text style={styles.buttonText}>Select Time</Text>
-            </TouchableOpacity>
+                    <TouchableOpacity style={styles.buttonStyle} onPress={() => setShowTimePicker(true)}>
+                        <Text style={styles.buttonText}>
+                            {time ? time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Select Time'}
+                        </Text>
+                    </TouchableOpacity>
 
-            {showTimePicker && (
-                <DateTimePicker
-                    value={time}
-                    mode="time"
-                    display="default"
-                    onChange={(event, selectedTime) => {
-                        setShowTimePicker(false);
-                        if (selectedTime) {
-                            setTime(selectedTime);
-                        }
-                    }}
-                />
-            )}
+                    {showTimePicker && (
+                        <DateTimePicker
+                            value={time}
+                            mode="time"
+                            display="default"
+                            onChange={(event, selectedTime) => {
+                                setShowTimePicker(false);
+                                if (selectedTime) {
+                                    setTime(selectedTime);
+                                }
+                            }}
+                        />
+                    )}
 
-            <TouchableOpacity style={styles.buttonStyle} onPress={handleSubmit}>
-                <Text style={styles.buttonText}>Reserve Table</Text>
-            </TouchableOpacity>
+                    <TouchableOpacity style={styles.buttonStyle} onPress={() => setModalVisible(true)}>
+                        <Text style={styles.buttonText}>{tableNumber ? `Table ${tableNumber}` : 'Select Table Number'}</Text>
+                    </TouchableOpacity>
 
-            <Text style={styles.header}>Order for your Table</Text>
-            <ScrollView>
-                {items.map((item) => (
-                    <View key={item.id} style={styles.menuItem}>
-                        <Text style={styles.menuItemText}>{item.name} - ${item.price.toFixed(2)}</Text>
-                        <View style={styles.quantityControl}>
-                            <TouchableOpacity onPress={() => handleDecreaseQuantity(item)} style={styles.quantityButton}>
-                                <Text style={styles.quantityButtonText}>-</Text>
-                            </TouchableOpacity>
-                            <Text style={styles.quantityText}>{selectedItems[item.id]?.quantity || 0}</Text>
-                            <TouchableOpacity onPress={() => handleIncreaseQuantity(item)} style={styles.quantityButton}>
-                                <Text style={styles.quantityButtonText}>+</Text>
-                            </TouchableOpacity>
+                    {/* Modal for selecting table */}
+                    <Modal visible={isModalVisible} animationType="slide" transparent={true}>
+                        <View style={styles.modalContainer}>
+                            <View style={styles.modalContent}>
+                                <Text style={styles.modalTitle}>Select a Table Number</Text>
+                                <FlatList
+                                    data={availableTables}
+                                    keyExtractor={(item) => item.toString()}
+                                    renderItem={({ item }) => (
+                                        <TouchableOpacity
+                                            style={styles.modalItem}
+                                            onPress={() => {
+                                                setTableNumber(item);
+                                                setModalVisible(false);
+                                            }}
+                                        >
+                                            <Text style={styles.modalItemText}>Table {item}</Text>
+                                        </TouchableOpacity>
+                                    )}
+                                />
+                                <TouchableOpacity style={styles.cancelButton} onPress={() => setModalVisible(false)}>
+                                    <Text style={styles.buttonText}>Cancel</Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
-                    </View>
-                ))}
-            </ScrollView>
+                    </Modal>
 
-            <View style={styles.footer}>
-                <Text style={styles.totalText}>Total: ${calculateTotal()}</Text>
-                <TouchableOpacity style={styles.buttonStyle} onPress={handlePlaceOrder}>
-                    <Text style={styles.buttonText}>Place Order</Text>
-                </TouchableOpacity>
-            </View>
+                    <TouchableOpacity style={styles.reserveButton} onPress={handleSubmit}>
+                        <Text style={styles.buttonText}>Reserve Table</Text>
+                    </TouchableOpacity>
+                </>
+            ) : (
+                <>
+                    <Text style={styles.title}>Order food for table {tableNumber} at {restaurantName}:</Text>
+                    <ScrollView>
+                        {items.map((item) => (
+                            <View key={item.id} style={styles.menuItem}>
+                                <Text style={styles.menuItemText}>{item.name} - ${item.price.toFixed(2)}</Text>
+                                <View style={styles.quantityControl}>
+                                    <TouchableOpacity onPress={() => handleDecreaseQuantity(item)} style={styles.quantityButton}>
+                                        <Text style={styles.quantityButtonText}>-</Text>
+                                    </TouchableOpacity>
+                                    <Text style={styles.quantityText}>{selectedItems[item.id]?.quantity || 0}</Text>
+                                    <TouchableOpacity onPress={() => handleIncreaseQuantity(item)} style={styles.quantityButton}>
+                                        <Text style={styles.quantityButtonText}>+</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        ))}
+                    </ScrollView>
+
+                    <View style={styles.footer}>
+                        <Text style={styles.totalText}>Total: ${calculateTotal()}</Text>
+                        <TouchableOpacity style={styles.buttonStyle} onPress={handlePlaceOrder}>
+                            <Text style={styles.buttonText}>Place Order</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={[styles.buttonStyle, { backgroundColor: '#FF3B30' }]} onPress={handleCancelOrder}>
+                            <Text style={styles.buttonText}>Cancel</Text>
+                        </TouchableOpacity>
+                    </View>
+                </>
+            )}
         </View>
     );
 }
@@ -193,22 +252,59 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
+    reserveButton: {
+        marginTop: 15,
+        borderRadius: 5,
+        padding: 10,
+        backgroundColor: '#4ec74e',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     buttonText: {
         color: '#fff',
         fontSize: 16,
-        fontWeight: 'bold',
     },
-    header: {
-        fontSize: 22,
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalContent: {
+        width: '80%',
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        padding: 20,
+        alignItems: 'center',
+    },
+    modalTitle: {
+        fontSize: 20,
         fontWeight: 'bold',
+        marginBottom: 20,
+    },
+    modalItem: {
+        padding: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#ccc',
+        width: '100%',
+    },
+    modalItemText: {
+        fontSize: 18,
+    },
+    cancelButton: {
         marginTop: 20,
-        marginBottom: 10,
+        padding: 10,
+        backgroundColor: '#FF3B30',
+        borderRadius: 5,
+        alignItems: 'center',
     },
     menuItem: {
-        padding: 15,
-        marginVertical: 5,
-        backgroundColor: '#f9f9f9',
-        borderRadius: 5,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#ccc',
     },
     menuItemText: {
         fontSize: 18,
@@ -216,33 +312,32 @@ const styles = StyleSheet.create({
     quantityControl: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 10,
     },
     quantityButton: {
+        backgroundColor: '#007AFF',
+        borderRadius: 5,
+        padding: 5,
         width: 30,
         height: 30,
-        backgroundColor: '#007AFF',
         alignItems: 'center',
         justifyContent: 'center',
-        borderRadius: 5,
-        marginHorizontal: 5,
     },
     quantityButtonText: {
         color: '#fff',
-        fontSize: 20,
+        fontSize: 25,
+        marginTop: -8,
     },
     quantityText: {
+        marginHorizontal: 10,
         fontSize: 18,
-        width: 30,
-        textAlign: 'center',
     },
     footer: {
         marginTop: 20,
         alignItems: 'center',
     },
     totalText: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: 'bold',
-        marginBottom: 15,
+        marginBottom: 10,
     },
 });
