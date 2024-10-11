@@ -4,6 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import Login from './components/Login';
 import SignUp from './components/SignUp';
 import Home from './components/Home';
+import Receipt from "./components/Receipt";
 
 import ReserveAndOrder from "./components/ReserveAndOrder";
 
@@ -31,6 +32,11 @@ export default function App() {
                 <Stack.Screen
                     name="ReserveAndOrder"  // Changed this line to correctly name the screen
                     component={ReserveAndOrder}
+                />
+                <Stack.Screen
+                    name="Receipt"
+                    component={Receipt}
+                    options={{ headerShown: false }}  // Hide the header for the Login screen
                 />
             </Stack.Navigator>
         </NavigationContainer>

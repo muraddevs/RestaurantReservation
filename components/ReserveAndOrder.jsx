@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, Modal, FlatList } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, Modal, FlatList, Image } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 export default function ReserveAndOrder({ route, navigation }) {
     const { restaurantName } = route.params || {};
-    const [guests, setGuests] = useState('');
+    const [guests, setGuests] = useState(0);
     const [date, setDate] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [time, setTime] = useState(new Date());
@@ -13,7 +13,7 @@ export default function ReserveAndOrder({ route, navigation }) {
     const [selectedItems, setSelectedItems] = useState({});
     const [tableNumber, setTableNumber] = useState(null);
     const [reserved, setReserved] = useState(false);
-    const [availableTables] = useState([...Array(20).keys()].map((i) => i + 1)); // Array of table numbers
+    const [availableTables] = useState([...Array(20).keys()].map((i) => i + 1));
     const [isModalVisible, setModalVisible] = useState(false);
 
     const handleGuestsChange = (text) => {
@@ -32,23 +32,37 @@ export default function ReserveAndOrder({ route, navigation }) {
 
         Alert.alert(
             "Reservation Confirmed",
-            `Table ${tableNumber} for ${guests} guests at ${restaurantName} on ${date.toLocaleDateString()} at ${time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`
+            `Table ${tableNumber} for ${guests} guests at ${restaurantName} on ${date.toLocaleDateString()} at ${time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}. Do you want to order food for your table?`,
+            [
+                {
+                    text: "Yes",
+                    onPress: () => {
+                        setReserved(true);
+                        fetchMenu();
+                    }
+                },
+                {
+                    text: "No",
+                    onPress: () => {
+                        Alert.alert("Reservation Successful", "You have successfully reserved the table.");
+                        navigation.navigate('Home');
+                    }
+                }
+            ]
         );
 
-        setGuests('');
+        setGuests(guests);
         setShowDatePicker(false);
         setShowTimePicker(false);
-        setReserved(true);
-        fetchMenu();
     };
 
     const fetchMenu = () => {
         const dummyMenu = [
-            { id: 1, name: 'Burger', price: 8.99 },
-            { id: 2, name: 'Pizza', price: 12.99 },
-            { id: 3, name: 'Pasta', price: 10.99 },
-            { id: 4, name: 'Salad', price: 6.99 },
-            { id: 5, name: 'Fries', price: 3.99 },
+            { id: 1, name: 'Burger', price: 8.99, imageUrl: 'https://dummyimage.com/300x200/000/fff.png&text=Burger' },
+            { id: 2, name: 'Pizza', price: 12.99, imageUrl: 'https://dummyimage.com/300x200/000/fff.png&text=Pizza' },
+            { id: 3, name: 'Pasta', price: 10.99, imageUrl: 'https://dummyimage.com/300x200/000/fff.png&text=Pasta' },
+            { id: 4, name: 'Salad', price: 6.99, imageUrl: 'https://dummyimage.com/300x200/000/fff.png&text=Salad' },
+            { id: 5, name: 'Fries', price: 3.99, imageUrl: 'https://dummyimage.com/300x200/000/fff.png&text=Fries' },
         ];
         setItems(dummyMenu);
     };
@@ -77,24 +91,54 @@ export default function ReserveAndOrder({ route, navigation }) {
     };
 
     const calculateTotal = () => {
+        if (!items || items.length === 0) return 0;
+
         return items.reduce((total, item) => {
             const quantity = selectedItems[item.id]?.quantity || 0;
             return total + item.price * quantity;
-        }, 0).toFixed(2);
+        }, 0);
     };
 
     const handlePlaceOrder = () => {
-        Alert.alert("Order Placed", `Your order for table ${tableNumber} has been placed.`, [
-            {
-                text: "OK",
-                onPress: () => {
-                    setSelectedItems({});
-                    navigation.navigate('Home'); // Replace 'Home' with the actual name of your home screen
-                },
-            },
-        ]);
-    };
+        const total = calculateTotal();
 
+        if (Object.keys(selectedItems).length === 0 || total <= 0) {
+            Alert.alert("No Items Selected", "Please select at least one item to place an order.");
+            return;
+        }
+
+        const selectedItemsArray = Object.keys(selectedItems).map(key => {
+            const item = items.find(i => i.id === parseInt(key));
+            return {
+                name: item?.name || '',
+                price: item?.price || 0,
+                quantity: selectedItems[key]?.quantity || 0,
+            };
+        });
+
+        navigation.navigate('Receipt', {
+            restaurantName,
+            selectedItems: selectedItemsArray,
+            total: total.toFixed(2),
+            tableNumber,
+            guests,
+            date: date.toLocaleDateString(),
+            time: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        });
+
+        Alert.alert(
+            "Order Placed",
+            `Your order for table ${tableNumber} has been placed.`,
+            [
+                {
+                    text: "OK",
+                    onPress: () => {
+                        setSelectedItems({});
+                    },
+                },
+            ]
+        );
+    };
 
     const handleCancelOrder = () => {
         setSelectedItems({});
@@ -158,7 +202,6 @@ export default function ReserveAndOrder({ route, navigation }) {
                         <Text style={styles.buttonText}>{tableNumber ? `Table ${tableNumber}` : 'Select Table Number'}</Text>
                     </TouchableOpacity>
 
-                    {/* Modal for selecting table */}
                     <Modal visible={isModalVisible} animationType="slide" transparent={true}>
                         <View style={styles.modalContainer}>
                             <View style={styles.modalContent}>
@@ -195,6 +238,7 @@ export default function ReserveAndOrder({ route, navigation }) {
                     <ScrollView>
                         {items.map((item) => (
                             <View key={item.id} style={styles.menuItem}>
+                                <Image source={{ uri: item.imageUrl }} style={styles.menuItemImage} />
                                 <Text style={styles.menuItemText}>{item.name} - ${item.price.toFixed(2)}</Text>
                                 <View style={styles.quantityControl}>
                                     <TouchableOpacity onPress={() => handleDecreaseQuantity(item)} style={styles.quantityButton}>
@@ -208,14 +252,13 @@ export default function ReserveAndOrder({ route, navigation }) {
                             </View>
                         ))}
                     </ScrollView>
-
-                    <View style={styles.footer}>
-                        <Text style={styles.totalText}>Total: ${calculateTotal()}</Text>
-                        <TouchableOpacity style={styles.buttonStyle} onPress={handlePlaceOrder}>
+                    <Text style={styles.totalText}>Total: ${calculateTotal().toFixed(2)}</Text>
+                    <View style={styles.buttonContainer}>
+                        <TouchableOpacity style={styles.placeOrderButton} onPress={handlePlaceOrder}>
                             <Text style={styles.buttonText}>Place Order</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={[styles.buttonStyle, { backgroundColor: '#FF3B30' }]} onPress={handleCancelOrder}>
-                            <Text style={styles.buttonText}>Cancel</Text>
+                        <TouchableOpacity style={styles.cancelButton} onPress={handleCancelOrder}>
+                            <Text style={styles.buttonText}>Cancel Order</Text>
                         </TouchableOpacity>
                     </View>
                 </>
@@ -227,117 +270,120 @@ export default function ReserveAndOrder({ route, navigation }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 20,
-        backgroundColor: '#fff',
+        padding: 16,
+        backgroundColor: '#fff'
     },
     title: {
-        fontSize: 24,
+        fontSize: 20,
         fontWeight: 'bold',
-        marginBottom: 20,
-        textAlign: 'center',
+        marginBottom: 16,
+        marginTop: 20,
     },
     input: {
-        borderColor: '#ccc',
         borderWidth: 1,
-        borderRadius: 5,
-        padding: 10,
-        marginBottom: 20,
-        fontSize: 16,
+        padding: 8,
+        marginBottom: 25,
+        borderRadius: 4,
+        borderColor: '#ddd'
     },
     buttonStyle: {
-        marginTop: 15,
-        borderRadius: 5,
+        backgroundColor: '#007BFF',
         padding: 10,
-        backgroundColor: '#007AFF',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    reserveButton: {
-        marginTop: 15,
         borderRadius: 5,
-        padding: 10,
-        backgroundColor: '#4ec74e',
-        alignItems: 'center',
-        justifyContent: 'center',
+        marginBottom: 10
     },
     buttonText: {
         color: '#fff',
         fontSize: 16,
-    },
-    modalContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    },
-    modalContent: {
-        width: '80%',
-        backgroundColor: '#fff',
-        borderRadius: 10,
-        padding: 20,
-        alignItems: 'center',
-    },
-    modalTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        marginBottom: 20,
-    },
-    modalItem: {
-        padding: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#ccc',
-        width: '100%',
-    },
-    modalItemText: {
-        fontSize: 18,
-    },
-    cancelButton: {
-        marginTop: 20,
-        padding: 10,
-        backgroundColor: '#FF3B30',
-        borderRadius: 5,
-        alignItems: 'center',
+        textAlign: 'center'
     },
     menuItem: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#ccc',
+        marginBottom: 16
+    },
+    menuItemImage: {
+        width: 85,
+        height: 85,
+        marginRight: 10,
+        borderRadius: 10
     },
     menuItemText: {
         fontSize: 18,
+        flex: 1,
+        marginLeft: 10
     },
     quantityControl: {
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'center'
     },
     quantityButton: {
-        backgroundColor: '#007AFF',
+        padding: 0, // Adjust padding if necessary, set to 0 to control height better
+        backgroundColor: '#007BFF',
         borderRadius: 5,
-        padding: 5,
-        width: 30,
-        height: 30,
-        alignItems: 'center',
-        justifyContent: 'center',
+        marginHorizontal: 5,
+        height: 35,
+        width: 35,
+        justifyContent: 'center', // Center vertically
+        alignItems: 'center',     // Center horizontally
     },
+
     quantityButtonText: {
         color: '#fff',
-        fontSize: 25,
-        marginTop: -8,
+        fontSize: 23,
+        lineHeight: 30, // Match line height to button height for vertical centering
     },
     quantityText: {
-        marginHorizontal: 10,
-        fontSize: 18,
-    },
-    footer: {
-        marginTop: 20,
-        alignItems: 'center',
+        fontSize: 16,
+        width: 30,
+        textAlign: 'center',
     },
     totalText: {
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: 'bold',
-        marginBottom: 10,
+        marginVertical: 16,
+        textAlign: 'right'
+    },
+    placeOrderButton: {
+        backgroundColor: '#28A745FF',
+        padding: 12,
+        borderRadius: 5,
+        marginBottom: 10
+    },
+    cancelButton: {
+        backgroundColor: '#dc3545',
+        padding: 12,
+        borderRadius: 5
+    },
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)'
+    },
+    modalContent: {
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 10,
+        width: '80%',
+        height: 400
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 10
+    },
+    modalItem: {
+        padding: 10
+    },
+    modalItemText: {
+        fontSize: 16
+    },
+    reserveButton: {
+        backgroundColor: '#28A745FF',
+        padding: 12,
+        borderRadius: 5,
+        marginTop: 16
     },
 });
