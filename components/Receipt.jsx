@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Alert } from 'react-native';
+import LottieView from "lottie-react-native";
 
 export default function Receipt({ route, navigation }) {
     const { restaurantName, selectedItems, total, tableNumber, guests, date, time } = route.params || {};
     const [isModalVisible, setModalVisible] = useState(false);
     const [isPaid, setIsPaid] = useState(false); // State to track if payment is made
+    const [showSuccessAnimation, setShowSuccessAnimation] = useState(false); // State to control animation visibility
+    const animationSource = require('../assets/SuccessAnimation.json');
 
     const handleCancel = () => {
         setModalVisible(false);
@@ -23,7 +26,11 @@ export default function Receipt({ route, navigation }) {
                     text: 'OK',
                     onPress: () => {
                         setIsPaid(true); // Mark payment as successful
-                        Alert.alert('Payment Successful!', 'Your payment has been processed.');
+                        setShowSuccessAnimation(true); // Show success animation
+                        setTimeout(() => {
+                            setShowSuccessAnimation(false); // Hide animation after 3 seconds
+                            Alert.alert('Payment Successful!', 'Your payment has been processed.');
+                        }, 2000);
                     },
                 },
             ]
@@ -56,14 +63,13 @@ export default function Receipt({ route, navigation }) {
                 >
                     <Text style={styles.homeButtonText}>{isPaid ? 'Paid' : 'Pay'}</Text>
                 </TouchableOpacity>
-                {
-                    !isPaid && (
-                        <TouchableOpacity style={styles.cancelButton} onPress={() => setModalVisible(true)}>
-                            <Text style={styles.homeButtonText}>Cancel</Text>
-                        </TouchableOpacity>
-                    )
-                }
+                {!isPaid && (
+                    <TouchableOpacity style={styles.cancelButton} onPress={() => setModalVisible(true)}>
+                        <Text style={styles.homeButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+                )}
             </View>
+
             <Modal
                 transparent={true}
                 animationType="slide"
@@ -82,6 +88,18 @@ export default function Receipt({ route, navigation }) {
                             </TouchableOpacity>
                         </View>
                     </View>
+                </View>
+            </Modal>
+
+            {/* Success Animation Modal */}
+            <Modal visible={showSuccessAnimation} transparent animationType="fade">
+                <View style={styles.animationContainer}>
+                    <LottieView
+                        source={animationSource}
+                        autoPlay
+                        loop={false}
+                        style={{ width: '100%', height: 200 }}
+                    />
                 </View>
             </Modal>
 
@@ -132,7 +150,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     buttonContainer: {
-        display: 'flex',
         flexDirection: 'row',
         justifyContent: 'space-around',
         marginTop: 50,
@@ -156,7 +173,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
     modalContent: {
         width: 300,
@@ -184,5 +201,11 @@ const styles = StyleSheet.create({
     modalButtonText: {
         color: '#fff',
         fontSize: 16,
+    },
+    animationContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
 });
