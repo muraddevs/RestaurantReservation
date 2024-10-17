@@ -1,10 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
+import {
+    View,
+    Text,
+    StyleSheet,
+    Image,
+    FlatList,
+    ActivityIndicator,
+    TouchableOpacity,
+    ScrollView,
+    TextInput
+} from 'react-native';
 
 export default function ReserveAndOrder({ route, navigation }) {
     const { username } = route.params || {};
     const [restaurants, setRestaurants] = useState([]);
+    const [topPicks, setTopPicks] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [searchText, setSearchText] = useState('');
+    const [filteredRestaurants, setFilteredRestaurants] = useState([]);
+    const [filteredTopPicks, setFilteredTopPicks] = useState([]);
 
     useEffect(() => {
         // Fetch dummy restaurant data
@@ -18,6 +32,7 @@ export default function ReserveAndOrder({ route, navigation }) {
                     });
                 }
                 setRestaurants(restaurantArray);
+                setFilteredRestaurants(restaurantArray); // Initialize filteredRestaurants
             } catch (error) {
                 console.error("Error fetching restaurant data:", error);
             } finally {
@@ -27,6 +42,42 @@ export default function ReserveAndOrder({ route, navigation }) {
 
         fetchRestaurants();
     }, []);
+
+    useEffect(() => {
+        // Fetch dummy top picks data
+        const fetchTopPicks = async () => {
+            try {
+                const topPicksArray = [];
+                for (let i = 0; i < 5; i++) { // Fetch 5 dummy top picks
+                    topPicksArray.push({
+                        name: `Top Pick ${i + 1}`,
+                        imageUrl: `https://dummyimage.com/300x200/000/fff.png&text=Top+Pick+${i + 1}`,
+                    });
+                }
+                setTopPicks(topPicksArray);
+                setFilteredTopPicks(topPicksArray); // Initialize filteredTopPicks
+            } catch (error) {
+                console.error("Error fetching top picks data:", error);
+            }
+        };
+
+        fetchTopPicks();
+    }, []);
+
+    const handleSearch = (text) => {
+        setSearchText(text);
+
+        const newFilteredRestaurants = restaurants.filter((restaurant) =>
+            restaurant.name.toLowerCase().includes(text.toLowerCase())
+        );
+
+        const newFilteredTopPicks = topPicks.filter((pick) =>
+            pick.name.toLowerCase().includes(text.toLowerCase())
+        );
+
+        setFilteredRestaurants(newFilteredRestaurants);
+        setFilteredTopPicks(newFilteredTopPicks);
+    };
 
     const renderItem = ({ item, index }) => (
         <View key={index} style={styles.restaurantWrapper}>
@@ -56,19 +107,54 @@ export default function ReserveAndOrder({ route, navigation }) {
             )}!
             </Text>
 
+            <TextInput
+                style={styles.input}
+                placeholder="Search"
+                value={searchText}
+                onChangeText={(text) => handleSearch(text)} // Dynamically update items as users type
+                onSubmitEditing={() => handleSearch(searchText)}
+            />
+
             {loading ? (
                 <ActivityIndicator size="large" color="#0000ff" />
             ) : (
-                <FlatList
-                    data={restaurants}
-                    renderItem={renderItem}
-                    keyExtractor={(item, index) => index.toString()}
-                    contentContainerStyle={styles.flatListContent}
-                    decelerationRate="fast"
-                    snapToAlignment="start"
-                    pagingEnabled
-                    showsVerticalScrollIndicator={false}
-                />
+                <ScrollView
+                    scrollEventThrottle={16}
+                    showsVerticalScrollIndicator={false} // Hide vertical scroll indicator
+                    contentContainerStyle={styles.scrollViewContent}
+                >
+                    {/* First Horizontal FlatList */}
+                    <Text
+                        style={styles.sectionTitle}
+                    >Popular</Text>
+                    <FlatList
+                        data={filteredRestaurants}
+                        horizontal={true}
+                        showsHorizontalScrollIndicator={false}
+                        renderItem={renderItem}
+                        keyExtractor={(item, index) => index.toString()}
+                        contentContainerStyle={styles.flatListContent}
+                        decelerationRate="fast"
+                        snapToAlignment="start"
+                        pagingEnabled
+                    />
+
+                    {/* Second Horizontal FlatList */}
+                    <Text
+                        style={styles.sectionTitle}
+                    >Top Picks</Text>
+                    <FlatList
+                        data={filteredTopPicks}
+                        horizontal={true}
+                        showsHorizontalScrollIndicator={false}
+                        renderItem={renderItem}
+                        keyExtractor={(item, index) => index.toString()}
+                        contentContainerStyle={styles.flatListContent}
+                        decelerationRate="fast"
+                        snapToAlignment="start"
+                        pagingEnabled
+                    />
+                </ScrollView>
             )}
         </View>
     );
@@ -85,7 +171,8 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#333',
         textAlign: 'center',
-        marginBottom: 20,
+        marginBottom: 30,
+        marginTop: 10,
     },
     usernameText: {
         fontSize: 24,
@@ -109,6 +196,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.15,
         shadowRadius: 10,
         elevation: 5,
+        margin: 3,
     },
     restaurantImage: {
         width: 300,
@@ -136,5 +224,20 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '500',
         textAlign: 'center',
+    },
+    input: {
+        height: 40,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 8,
+        paddingHorizontal: 10,
+        backgroundColor: '#fff',
+        marginBottom: 20,
+    },
+    sectionTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#333',
+        marginBottom: 10,
     },
 });
